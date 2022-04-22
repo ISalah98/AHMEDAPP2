@@ -1,4 +1,5 @@
 //Main File
+//Another Comment
 package com.esmcegypt.ahmedapp2;
 
 import android.Manifest;
@@ -28,7 +29,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 
-public class MainActivity extends AppCompatActivity {
+public class intro extends AppCompatActivity {
 
     TextView result, confidence;
     ImageView mohamed;
@@ -38,11 +39,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.intro);
 
-        result = findViewById(R.id.result);
-        confidence = findViewById(R.id.confidence);
-        mohamed = findViewById(R.id.imageView);
         picture = findViewById(R.id.button);
 
 
@@ -83,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
             //هنا بتقوله افتحلي الصفحة اللي كان الـ "اي دي" بتاعها رقمه تلاتة
             if(requestCode == 3){
 
+
                 //٥- هنا بتاخد الصورة اللي اتصورت وتسجلها في متغير نوعه صورة
                 Bitmap image = (Bitmap) data.getExtras().get("data");
 
@@ -94,22 +93,22 @@ public class MainActivity extends AppCompatActivity {
                 image = ThumbnailUtils.extractThumbnail(image, dimension, dimension);
 
                 // ٨- هنا بتعرض الصورة بعد ما اتقصت على الشاشة
-                mohamed.setImageBitmap(image);
+                //mohamed.setImageBitmap(image);
 
                 // ٩- هنا بتعدل طول وعرض الصورة تاني لـ ٢٢٤ ف ٢٢٤ علشان المودل بياخد الطول والعرض دة
                 image = Bitmap.createScaledBitmap(image, imageSize, imageSize, false);
 
                 //١٠- هنا بتبعت الصورة للفنكشن اللي هتبدأ تدخل الصورة للمودل وتديلك النتيجة
-                classifyImage(image);
+                classifyImage(image,image);
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    public void classifyImage(Bitmap image){
+    public void classifyImage(Bitmap image, Bitmap imageDisplay){
         try {
 
-            //١١- بنكريت اوبجت من الموديل
+            //١١- بنكريت اوبجيكت من الموديل
             Model model = Model.newInstance(getApplicationContext());
 
             //١٢ - بنكريت صورة افتراضية
@@ -129,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
             //١٦- هنمسك البكسبلاات واحدة واحدة ونخزنها في البايت بافر اللي رايح للمودل
             for(int i = 0; i < imageSize; i ++){
                 for(int j = 0; j < imageSize; j++){
-                    int val = pixelValues[4]; // RGB
+                    int val = pixelValues[pixel++]; // RGB
                     byteBuffer.putFloat(((val >> 16) & 0xFF) * (1.f / 255.f));
                     byteBuffer.putFloat(((val >> 8) & 0xFF) * (1.f / 255.f));
                     byteBuffer.putFloat((val & 0xFF) * (1.f / 255.f));
@@ -155,20 +154,38 @@ public class MainActivity extends AppCompatActivity {
             }
 
 
-            if(maxConfidence < 0.80)
+            String[] classes ={"تفاحة جيدة","موز جيد","برتقالة جيدة","تفاحة غير جيدة","موز غير جيد", "برتقالة غير جيدة","أعد إلتقاط الصورة"};
+
+            String p1 = String.format("%s: %.1f%%", classes[0], confidences[0] * 100);
+            String p2 = String.format("%s: %.1f%%", classes[2], confidences[2] * 100);
+            String p3 = String.format("%s: %.1f%%", classes[3], confidences[3] * 100);
+            String p4 = String.format("%s: %.1f%%", classes[5], confidences[5] * 100);
+
+
+            if(maxConfidence < 0.08 || maxPos == 4)
             {
                 maxPos = 6;
+                p1 = "---";
+                p2 = "---";
+                p3 = "---";
+                p4 = "---";
             }
 
-            String[] classes ={"تفاحة جيدة","موز جيد","برتقالة جيدة", "تفاحة غير جيدة", "موز غير جيد", "برتقالة غير جيدة", "اعد التقاط الصورة"};
+            //String[] classes = {"A","B","C","D","E","F"};
 
-            result.setText(classes[maxPos]);
+            //result.setText(classes[maxPos]);
 
-            String s = "";
-            for(int i = 0; i < classes.length - 1; i++){
-                s += String.format("%s: %.1f%%\n", classes[i], confidences[i] * 100);
-            }
-            confidence.setText(s);
+            Intent i = new Intent(this, ScreenResult.class);
+            i.putExtra("PERCENTAGEONE",p1);
+            i.putExtra("PERCENTAGETWO",p2);
+            i.putExtra("PERCENTAGETHREE",p3);
+            i.putExtra("PERCENTAGEFOUR",p4);
+            i.putExtra("IMAGE",imageDisplay);
+
+            i.putExtra("RESULT",classes[maxPos]);
+            startActivity(i);
+
+            //confidence.setText(s);
 
             // Releases model resources if no longer used.
             //model.close();
